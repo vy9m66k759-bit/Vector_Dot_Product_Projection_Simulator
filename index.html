@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vector Projection</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300&display=swap');
+        
+        body {
+            background-color: #ffffff;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        .workspace {
+            position: relative;
+            display: inline-block;
+            background: #fafafa;
+            border: 1px solid #f4f4f5;
+            border-radius: 2rem;
+            padding: 2rem;
+            margin-top: 1rem;
+        }
+
+        canvas {
+            touch-action: none;
+            cursor: crosshair;
+            display: block;
+        }
+
+        .cos-display {
+            font-family: 'JetBrains Mono', monospace;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .label-node {
+            position: absolute;
+            pointer-events: none;
+            font-size: 14px;
+            font-weight: 500;
+            left: 0;
+            top: 0;
+            margin: 0;
+        }
+
+        .description {
+            max-width: 440px;
+            text-align: center;
+            color: #52525b;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin-top: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="text-center">
+        <div class="text-[10px] uppercase tracking-widest text-zinc-400 mb-1">Cosine Value</div>
+        <div id="cosValue" class="text-6xl font-light cos-display">0.00</div>
+        <div class="text-[11px] text-zinc-400 mt-3 leading-relaxed">
+            $ \vec{b} $ 와 $ \vec{a} $ 의 <strong>방향 일치도(효율)</strong>를 의미합니다.<br>
+            (1: 완전 일치, 0: 직교/영향 없음, -1: 정반대)
+        </div>
+    </div>
+
+    <div class="workspace">
+        <canvas id="canvas"></canvas>
+        <div id="labelA" class="label-node">$ \vec{a} $</div>
+        <div id="labelB" class="label-node text-zinc-400">$ \vec{b} $</div>
+    </div>
+
+    <div class="description">
+        그림자(Shadow)는 $ \vec{b} $ 방향으로 이동시키고 싶을 때, 
+        <br>
+        $ \vec{a} $ 라는 힘이 <strong>얼마나 효과가 있는가(기여도)</strong>를 나타냅니다.
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const cosDisplay = document.getElementById('cosValue');
+        const labelA = document.getElementById('labelA');
+        const labelB = document.getElementById('labelB');
+
+        const state = {
+            width: 440,
+            height: 260,
+            origin: { x: 220, y: 150 },
+            a: { x: 120, y: -110 },
+            bLength: 160,
+            isActive: false
+        };
+
+        function init() {
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = state.width * dpr;
+            canvas.height = state.height * dpr;
+            canvas.style.width = `${state.width}px`;
+            canvas.style.height = `${state.height}px`;
+            ctx.scale(dpr, dpr);
+            
+            if (window.renderMathInElement) {
+                renderMathInElement(document.body, {
+                    delimiters: [
+                        {left: "$$", right: "$$", display: true},
+                        {left: "$", right: "$", display: false}
+                    ]
+                });
+            }
+            draw();
+        }
+
+        function drawArrow(fx, fy, tx, ty, color, width) {
+            ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = width;
+            ctx.moveTo(fx, fy); ctx.lineTo(tx, ty); ctx.stroke();
+            
+            const a = Math.atan2(ty - fy, tx - fx);
+            ctx.beginPath(); ctx.fillStyle = color;
+            ctx.moveTo(tx, ty);
+            ctx.lineTo(tx - 8 * Math.cos(a - 0.4), ty - 8 * Math.sin(a - 0.4));
+            ctx.lineTo(tx - 8 * Math.cos(a + 0.4), ty - 8 * Math.sin(a + 0.4));
+            ctx.fill();
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, state.width, state.height);
+            const { origin, a, bLength } = state;
+
+            // Axis & Vector b
+            ctx.beginPath(); ctx.strokeStyle = '#f4f4f5'; ctx.moveTo(0, origin.y); ctx.lineTo(state.width, origin.y); ctx.stroke();
+            drawArrow(origin.x, origin.y, origin.x + bLength, origin.y, '#d4d4d8', 2);
+
+            // Calculation & Shadow
+            const projX = a.x;
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(Math.min(origin.x, origin.x + projX), origin.y - 1.5, Math.abs(projX), 3);
+
+            // Guide & Vector a
+            ctx.setLineDash([3, 4]); ctx.strokeStyle = '#e4e4e7';
+            ctx.beginPath(); ctx.moveTo(origin.x + a.x, origin.y + a.y); ctx.lineTo(origin.x + a.x, origin.y); ctx.stroke();
+            ctx.setLineDash([]);
+            drawArrow(origin.x, origin.y, origin.x + a.x, origin.y + a.y, '#000000', 2);
+
+            // UI Updates
+            cosDisplay.innerText = (Math.hypot(a.x, a.y) === 0 ? 0 : a.x / Math.hypot(a.x, a.y)).toFixed(2);
+            labelA.style.transform = `translate(${origin.x + a.x + 10}px, ${origin.y + a.y - 20}px)`;
+            labelB.style.transform = `translate(${origin.x + bLength - 10}px, ${origin.y + 12}px)`;
+        }
+
+        function update(e) {
+            const r = canvas.getBoundingClientRect();
+            state.a.x = (e.touches ? e.touches[0].clientX : e.clientX) - r.left - state.origin.x;
+            state.a.y = (e.touches ? e.touches[0].clientY : e.clientY) - r.top - state.origin.y;
+            draw();
+        }
+
+        canvas.onmousedown = (e) => { state.isActive = true; update(e); };
+        window.onmousemove = (e) => { if(state.isActive) update(e); };
+        window.onmouseup = () => state.isActive = false;
+        
+        canvas.ontouchstart = (e) => { e.preventDefault(); state.isActive = true; update(e); };
+        window.ontouchmove = (e) => { if(state.isActive) update(e); };
+        window.ontouchend = () => state.isActive = false;
+
+        window.onload = init;
+    </script>
+</body>
+</html>
