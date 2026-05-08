@@ -1,180 +1,487 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vector Projection</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300&display=swap');
-        
-        body {
-            background-color: #ffffff;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            overflow: hidden;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vector Dot Product</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400&display=swap');
 
-        .workspace {
-            position: relative;
-            display: inline-block;
-            background: #fafafa;
-            border: 1px solid #f4f4f5;
-            border-radius: 2rem;
-            padding: 2rem;
-            margin-top: 1rem;
-        }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        canvas {
-            touch-action: none;
-            cursor: crosshair;
-            display: block;
-        }
+    body {
+      background: #f5f5f5;
+      color: #111111;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 1.5rem 1rem;
+      gap: 1.1rem;
+    }
 
-        .cos-display {
-            font-family: 'JetBrains Mono', monospace;
-            font-variant-numeric: tabular-nums;
-        }
+    /* 상단 패널 */
+    .top-panel {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .top-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #888888;
+    }
+    .cos-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 4.5rem;
+      font-weight: 300;
+      line-height: 1;
+      color: #5E17EB;
+    }
+    .cos-desc {
+      font-size: 12px;
+      font-weight: 700;
+      color: #555555;
+    }
 
-        .label-node {
-            position: absolute;
-            pointer-events: none;
-            font-size: 14px;
-            font-weight: 500;
-            left: 0;
-            top: 0;
-            margin: 0;
-        }
+    /* 기여도 바 */
+    .bar-wrap {
+      width: 260px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .bar-ends {
+      font-size: 11px;
+      font-weight: 700;
+      color: #666666;
+      display: flex;
+      justify-content: space-between;
+    }
+    .bar-track {
+      width: 100%;
+      height: 3px;
+      background: #dddddd;
+      border-radius: 2px;
+      position: relative;
+    }
+    .bar-track::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: -2px;
+      width: 1px;
+      height: 7px;
+      background: #aaaaaa;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      background: #5E17EB;
+      transition: width 0.04s;
+    }
 
-        .description {
-            max-width: 440px;
-            text-align: center;
-            color: #52525b;
-            font-size: 0.9rem;
-            line-height: 1.5;
-            margin-top: 1.5rem;
-        }
-    </style>
+    /* 캔버스 */
+    .workspace {
+      border-radius: 1.25rem;
+      overflow: hidden;
+      border: 1px solid #cccccc;
+      width: 100%;
+      max-width: 560px;
+    }
+    canvas {
+      display: block;
+      touch-action: none;
+      cursor: crosshair;
+      width: 100% !important;
+    }
+
+    /* 슬라이더 영역 - 2열 */
+    .slider-wrap {
+      width: 100%;
+      max-width: 560px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    /* |a| 고정 표시 */
+    .a-display {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      background: #ffffff;
+      border: 1.5px solid #cccccc;
+      border-radius: 10px;
+      padding: 10px 14px;
+      flex-shrink: 0;
+      min-width: 70px;
+    }
+    .a-display-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #666666;
+      white-space: nowrap;
+    }
+    .a-display-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.3rem;
+      font-weight: 400;
+      color: #111111;
+    }
+
+    /* |b| 슬라이더 */
+    .b-slider-group {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .b-slider-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .slider-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #444444;
+      white-space: nowrap;
+    }
+    .slider-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      color: #444444;
+    }
+    input[type=range] {
+      width: 100%;
+      accent-color: #5E17EB;
+      cursor: pointer;
+    }
+
+    /* 수식 행 */
+    .eq-row {
+      display: flex;
+      align-items: stretch;
+      width: 100%;
+      max-width: 560px;
+    }
+    .eq-cell {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 11px 8px;
+      background: #ffffff;
+      border: 1.5px solid #dddddd;
+    }
+    .eq-cell:first-child { border-radius: 10px 0 0 10px; }
+    .eq-cell:last-child  { border-radius: 0 10px 10px 0; border-left: none; }
+    .eq-cell + .eq-cell  { border-left: none; }
+    .eq-cell.featured {
+      background: #f3eeff;
+      border-color: #c4a0f5;
+    }
+    .eq-op {
+      font-size: 14px;
+      font-weight: 700;
+      color: #999999;
+      display: flex;
+      align-items: center;
+      padding: 0 6px;
+      background: #f5f5f5;
+      border-top: 1.5px solid #dddddd;
+      border-bottom: 1.5px solid #dddddd;
+      flex-shrink: 0;
+    }
+    .cell-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #777777;
+      white-space: nowrap;
+    }
+    .cell-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.3rem;
+      font-weight: 400;
+      color: #5E17EB;
+    }
+    .cell-value.secondary { color: #111111; }
+    .cell-value.tertiary  { color: #555555; }
+  </style>
 </head>
 <body>
 
-    <div class="text-center">
-        <div class="text-[10px] uppercase tracking-widest text-zinc-400 mb-1">Cosine Value</div>
-        <div id="cosValue" class="text-6xl font-light cos-display">0.00</div>
-        <div class="text-[11px] text-zinc-400 mt-3 leading-relaxed">
-            $ \vec{b} $ 와 $ \vec{a} $ 의 <strong>방향 일치도(효율)</strong>를 의미합니다.<br>
-            (1: 완전 일치, 0: 직교/영향 없음, -1: 정반대)
-        </div>
+  <!-- 상단: cos θ 값 -->
+  <div class="top-panel">
+    <div class="top-label">기여도 &nbsp;cos &#952;</div>
+    <div class="cos-value" id="cosValue">0.82</div>
+    <div class="bar-wrap">
+      <div class="bar-ends"><span>&#8722;1</span><span>0</span><span>+1</span></div>
+      <div class="bar-track"><div class="bar-fill" id="barFill" style="width:91%"></div></div>
     </div>
+    <div class="cos-desc">a 방향의 힘이 b 방향으로 얼마나 전달되는가</div>
+  </div>
 
-    <div class="workspace">
-        <canvas id="canvas"></canvas>
-        <div id="labelA" class="label-node">$ \vec{a} $</div>
-        <div id="labelB" class="label-node text-zinc-400">$ \vec{b} $</div>
+  <!-- 캔버스 -->
+  <div class="workspace">
+    <canvas id="canvas"></canvas>
+  </div>
+
+  <!-- 슬라이더 영역: |a| 표시 + |b| 슬라이더 -->
+  <div class="slider-wrap">
+    <!-- |a| 숫자 표시 (고정) -->
+    <div class="a-display">
+      <div class="a-display-label">|a| 크기</div>
+      <div class="a-display-val" id="aDisplay">7.2</div>
     </div>
-
-    <div class="description">
-        그림자(Shadow)는 $ \vec{b} $ 방향으로 이동시키고 싶을 때, 
-        <br>
-        $ \vec{a} $ 라는 힘이 <strong>얼마나 효과가 있는가(기여도)</strong>를 나타냅니다.
+    <!-- |b| 슬라이더 -->
+    <div class="b-slider-group">
+      <div class="b-slider-header">
+        <span class="slider-label">|b| 바닥 크기</span>
+        <span class="slider-val" id="sliderBVal">5</span>
+      </div>
+      <input type="range" id="sliderB" min="1" max="10" value="5" step="1">
     </div>
+  </div>
 
-    <script>
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-        const cosDisplay = document.getElementById('cosValue');
-        const labelA = document.getElementById('labelA');
-        const labelB = document.getElementById('labelB');
+  <!-- 수식 행 -->
+  <div class="eq-row">
+    <div class="eq-cell">
+      <div class="cell-label">그림자 &nbsp;|a|cos&#952;</div>
+      <div class="cell-value secondary" id="fShadow">4.9</div>
+    </div>
+    <div class="eq-op">&#215;</div>
+    <div class="eq-cell">
+      <div class="cell-label">바닥 크기 &nbsp;|b|</div>
+      <div class="cell-value tertiary" id="fB">5</div>
+    </div>
+    <div class="eq-op">=</div>
+    <div class="eq-cell featured">
+      <div class="cell-label">내적 &nbsp;a&#183;b</div>
+      <div class="cell-value" id="fDot">24.6</div>
+    </div>
+  </div>
 
-        const state = {
-            width: 440,
-            height: 260,
-            origin: { x: 220, y: 150 },
-            a: { x: 120, y: -110 },
-            bLength: 160,
-            isActive: false
-        };
+<script>
+const canvas = document.getElementById('canvas');
+const ctx    = canvas.getContext('2d');
+const workspace = document.querySelector('.workspace');
 
-        function init() {
-            const dpr = window.devicePixelRatio || 1;
-            canvas.width = state.width * dpr;
-            canvas.height = state.height * dpr;
-            canvas.style.width = `${state.width}px`;
-            canvas.style.height = `${state.height}px`;
-            ctx.scale(dpr, dpr);
-            
-            if (window.renderMathInElement) {
-                renderMathInElement(document.body, {
-                    delimiters: [
-                        {left: "$$", right: "$$", display: true},
-                        {left: "$", right: "$", display: false}
-                    ]
-                });
-            }
-            draw();
-        }
+// 반응형: wrapper 너비에 맞게 캔버스 논리 크기 결정
+const ASPECT = 460 / 270;
+let W, H, OX, OY;
+const UNIT = 20;
+const dpr = window.devicePixelRatio || 1;
 
-        function drawArrow(fx, fy, tx, ty, color, width) {
-            ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = width;
-            ctx.moveTo(fx, fy); ctx.lineTo(tx, ty); ctx.stroke();
-            
-            const a = Math.atan2(ty - fy, tx - fx);
-            ctx.beginPath(); ctx.fillStyle = color;
-            ctx.moveTo(tx, ty);
-            ctx.lineTo(tx - 8 * Math.cos(a - 0.4), ty - 8 * Math.sin(a - 0.4));
-            ctx.lineTo(tx - 8 * Math.cos(a + 0.4), ty - 8 * Math.sin(a + 0.4));
-            ctx.fill();
-        }
+function resizeCanvas() {
+  const ww = Math.min(workspace.clientWidth, 560);
+  W = ww;
+  H = Math.round(W / ASPECT);
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  OX = W / 2;
+  OY = H * 0.64;
+  draw();
+}
 
-        function draw() {
-            ctx.clearRect(0, 0, state.width, state.height);
-            const { origin, a, bLength } = state;
+window.addEventListener('resize', resizeCanvas);
 
-            // Axis & Vector b
-            ctx.beginPath(); ctx.strokeStyle = '#f4f4f5'; ctx.moveTo(0, origin.y); ctx.lineTo(state.width, origin.y); ctx.stroke();
-            drawArrow(origin.x, origin.y, origin.x + bLength, origin.y, '#d4d4d8', 2);
+const state = { a: { x: 110, y: -95 }, bLen: 5, isActive: false };
 
-            // Calculation & Shadow
-            const projX = a.x;
-            ctx.fillStyle = '#000000';
-            ctx.fillRect(Math.min(origin.x, origin.x + projX), origin.y - 1.5, Math.abs(projX), 3);
+document.getElementById('sliderB').addEventListener('input', function() {
+  state.bLen = parseInt(this.value);
+  document.getElementById('sliderBVal').textContent = this.value;
+  draw();
+});
 
-            // Guide & Vector a
-            ctx.setLineDash([3, 4]); ctx.strokeStyle = '#e4e4e7';
-            ctx.beginPath(); ctx.moveTo(origin.x + a.x, origin.y + a.y); ctx.lineTo(origin.x + a.x, origin.y); ctx.stroke();
-            ctx.setLineDash([]);
-            drawArrow(origin.x, origin.y, origin.x + a.x, origin.y + a.y, '#000000', 2);
+function arrowLine(x1, y1, x2, y2, color, lw, glowColor) {
+  const dx = x2-x1, dy = y2-y1, len = Math.hypot(dx,dy);
+  if (len < 2) return;
+  const ux = dx/len, uy = dy/len, hw = 9, hh = 4;
+  const ax = x2 - ux*hw, ay = y2 - uy*hw;
+  if (glowColor) { ctx.save(); ctx.shadowColor = glowColor; ctx.shadowBlur = 10; }
+  ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = lw;
+  ctx.moveTo(x1,y1); ctx.lineTo(ax,ay); ctx.stroke();
+  ctx.beginPath(); ctx.fillStyle = color;
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(ax - uy*hh, ay + ux*hh);
+  ctx.lineTo(ax + uy*hh, ay - ux*hh);
+  ctx.fill();
+  if (glowColor) ctx.restore();
+}
 
-            // UI Updates
-            cosDisplay.innerText = (Math.hypot(a.x, a.y) === 0 ? 0 : a.x / Math.hypot(a.x, a.y)).toFixed(2);
-            labelA.style.transform = `translate(${origin.x + a.x + 10}px, ${origin.y + a.y - 20}px)`;
-            labelB.style.transform = `translate(${origin.x + bLength - 10}px, ${origin.y + 12}px)`;
-        }
+// 벡터 위에 화살표 기호 그리기
+function drawVecLabel(text, tx, ty, color) {
+  ctx.save();
+  ctx.fillStyle = color;
+  ctx.font = 'bold 16px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText(text, tx, ty);
+  const tw = ctx.measureText(text).width;
+  // 위에 작은 우향 화살표
+  const ax0 = tx, ax1 = tx + tw;
+  const ay  = ty - 15;
+  ctx.beginPath();
+  ctx.strokeStyle = color; ctx.lineWidth = 1.5;
+  ctx.moveTo(ax0, ay); ctx.lineTo(ax1, ay);
+  ctx.moveTo(ax1 - 4, ay - 3); ctx.lineTo(ax1, ay); ctx.lineTo(ax1 - 4, ay + 3);
+  ctx.stroke();
+  ctx.restore();
+}
 
-        function update(e) {
-            const r = canvas.getBoundingClientRect();
-            state.a.x = (e.touches ? e.touches[0].clientX : e.clientX) - r.left - state.origin.x;
-            state.a.y = (e.touches ? e.touches[0].clientY : e.clientY) - r.top - state.origin.y;
-            draw();
-        }
+function draw() {
+  if (!W) return;
+  const { a, bLen } = state;
+  const aLen       = Math.hypot(a.x, a.y);
+  const cosT       = aLen < 0.01 ? 0 : a.x / aLen;
+  const shadowPx   = aLen * cosT;
+  const shadowUnit = shadowPx / UNIT;
+  const dotVal     = shadowUnit * bLen;
+  const bPx        = bLen * UNIT;
+  const lx = OX + a.x, ly = OY + a.y;
+  const projX = OX + shadowPx;
 
-        canvas.onmousedown = (e) => { state.isActive = true; update(e); };
-        window.onmousemove = (e) => { if(state.isActive) update(e); };
-        window.onmouseup = () => state.isActive = false;
-        
-        canvas.ontouchstart = (e) => { e.preventDefault(); state.isActive = true; update(e); };
-        window.ontouchmove = (e) => { if(state.isActive) update(e); };
-        window.ontouchend = () => state.isActive = false;
+  // 배경 — 캔버스 내부는 검은 배경 유지
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = '#0a0a0a';
+  ctx.fillRect(0,0,W,H);
 
-        window.onload = init;
-    </script>
+  // 조명 원뿔
+  if (Math.abs(shadowPx) > 4) {
+    ctx.beginPath();
+    ctx.moveTo(lx, ly);
+    ctx.lineTo(OX, OY);
+    ctx.lineTo(projX, OY);
+    ctx.closePath();
+    const cg = ctx.createLinearGradient(lx, ly, (OX+projX)/2, OY);
+    cg.addColorStop(0, 'rgba(255,255,200,0.07)');
+    cg.addColorStop(1, 'rgba(255,255,200,0.01)');
+    ctx.fillStyle = cg; ctx.fill();
+  }
+
+  // 광원 후광
+  const gr = ctx.createRadialGradient(lx,ly,0,lx,ly,70);
+  gr.addColorStop(0,'rgba(255,255,210,0.4)');
+  gr.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle = gr; ctx.fillRect(lx-70,ly-70,140,140);
+
+  // 바닥 축
+  ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0,OY); ctx.lineTo(W,OY); ctx.stroke();
+
+  // b 벡터
+  arrowLine(OX, OY, OX + bPx, OY, '#ffffff', 2.5);
+  drawVecLabel('b', OX + bPx + 10, OY + 5, '#ffffff');
+
+  // 그림자 발광선
+  if (Math.abs(shadowPx) > 2) {
+    const sx = Math.min(OX, projX), sw = Math.abs(shadowPx);
+    const sg = ctx.createLinearGradient(sx, OY-8, sx, OY+8);
+    sg.addColorStop(0,'rgba(94,23,235,0.0)');
+    sg.addColorStop(0.5,'rgba(94,23,235,0.2)');
+    sg.addColorStop(1,'rgba(94,23,235,0.0)');
+    ctx.fillStyle = sg; ctx.fillRect(sx, OY-8, sw, 16);
+
+    ctx.save();
+    ctx.shadowColor = '#5E17EB'; ctx.shadowBlur = 8;
+    ctx.strokeStyle = '#5E17EB'; ctx.lineWidth = 3.5;
+    ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(OX,OY); ctx.lineTo(projX,OY); ctx.stroke();
+    ctx.restore();
+
+    // 수선 점선
+    ctx.strokeStyle = '#333'; ctx.lineWidth = 0.8;
+    ctx.setLineDash([3,4]);
+    ctx.beginPath(); ctx.moveTo(lx,ly); ctx.lineTo(projX,OY); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // 직각 기호
+    if (Math.abs(a.y) > 10 && Math.abs(shadowPx) > 14) {
+      const d = shadowPx > 0 ? -1 : 1, s = 6;
+      ctx.strokeStyle = '#3a3a3a'; ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.moveTo(projX+d*s, OY);
+      ctx.lineTo(projX+d*s, OY-s);
+      ctx.lineTo(projX,     OY-s);
+      ctx.stroke();
+    }
+  }
+
+  // |b| 텍스트
+  if (bPx > 4) {
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 13px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('|b| = ' + bLen, OX + bPx / 2, OY - 12);
+  }
+
+  // 각도 호
+  if (aLen > 10) {
+    const arcR = Math.min(26, aLen * 0.3);
+    const ang  = Math.atan2(-a.y, a.x);
+    ctx.strokeStyle = '#333'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(OX, OY, arcR, -ang, 0); ctx.stroke();
+    const mid = -ang / 2;
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 14px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('\u03b8', OX+(arcR+12)*Math.cos(mid), OY+(arcR+12)*Math.sin(mid) + 4);
+  }
+
+  // 벡터 a
+  arrowLine(OX, OY, lx, ly, '#f0f0e8', 2.2, 'rgba(255,255,210,0.5)');
+  const aLabelX = lx + (a.x >= 0 ? 10 : -28);
+  drawVecLabel('a', aLabelX, ly - 8, '#ffffff');
+
+  // 원점
+  ctx.fillStyle = '#404040';
+  ctx.beginPath(); ctx.arc(OX,OY,3,0,Math.PI*2); ctx.fill();
+
+  // ── UI 업데이트 ──
+  document.getElementById('cosValue').textContent = cosT.toFixed(2);
+  const pct = Math.round(((cosT + 1) / 2) * 100);
+  document.getElementById('barFill').style.width = pct + '%';
+
+  // |a| 실시간 표시
+  document.getElementById('aDisplay').textContent = (aLen / UNIT).toFixed(1);
+
+  document.getElementById('fShadow').textContent = shadowUnit.toFixed(1);
+  document.getElementById('fB').textContent      = bLen;
+  document.getElementById('fDot').textContent    = dotVal.toFixed(1);
+}
+
+function update(e) {
+  const r = canvas.getBoundingClientRect();
+  const scaleX = W / r.width;
+  const scaleY = H / r.height;
+  state.a.x = ((e.touches ? e.touches[0].clientX : e.clientX) - r.left) * scaleX - OX;
+  state.a.y = ((e.touches ? e.touches[0].clientY : e.clientY) - r.top)  * scaleY - OY;
+  draw();
+}
+
+canvas.onmousedown  = e => { state.isActive = true; update(e); };
+window.onmousemove  = e => { if (state.isActive) update(e); };
+window.onmouseup    = ()=> { state.isActive = false; };
+canvas.ontouchstart = e => { e.preventDefault(); state.isActive = true; update(e); };
+window.ontouchmove  = e => { if (state.isActive) update(e); };
+window.ontouchend   = ()=> { state.isActive = false; };
+
+// 초기화
+resizeCanvas();
+</script>
 </body>
 </html>
